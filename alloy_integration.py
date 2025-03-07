@@ -23,6 +23,18 @@ VALID_STATES = [
     "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
 ]
 
+def get_required_parameters():
+    """Fetches required fields from the Alloy API parameters endpoint."""
+    response = requests.get("https://sandbox.alloy.co/v1/parameters/",
+                            auth=(WORKFLOW_TOKEN, WORKFLOW_SECRET))
+
+    if response.status_code == 200:
+        parameters = response.json()
+        print("Required Fields:", parameters.get("required", []))
+        print("Optional Fields:", parameters.get("optional", []))
+    else:
+        print("Error fetching parameters:", response.status_code, response.text)
+
 # Validation functions
 def get_valid_name(prompt):
     """ Ensures name contains only alphabetical characters and is at least 2 characters"""
@@ -87,12 +99,18 @@ def get_applicant_details():
   
 # Function to submit application
 def submit_application(applicant_data):
+    """Submits an application to Alloy's evaluation endpoint."""
+    payload = {
+        "name": "default",  # Update if Alloy provides a specific workflow name
+        "attributes": applicant_data
+    }
+
     response = requests.post(
-        EVALUATIONS_ENDPOINT,
+        "https://sandbox.alloy.co/v1/evaluations/",
         auth=(WORKFLOW_TOKEN, WORKFLOW_SECRET),
-        json={"applicant": applicant_data}
+        json=payload
     )
-    
+
     if response.status_code == 200:
         return response.json()
     else:
@@ -100,8 +118,15 @@ def submit_application(applicant_data):
         return None
 
 # Function to process API response
-def process_response(response):
-    if response and "summary" in response:
+def process_response(response):She
+    """Processes API response and prints an appropriate message."""
+    if not response:
+        print("Error: No response received.")
+        return
+
+    print("\nFull API Response:\n", response, "\n")
+
+    if "summary" in response:
         outcome = response["summary"].get("outcome", "Unknown")
         if outcome == "Approved":
             print("Congratulations! You are approved.")
@@ -110,9 +135,17 @@ def process_response(response):
         elif outcome == "Deny":
             print("Unfortunately, we cannot approve your application at this time.")
         else:
-            print("Unexpected response:", response)
+            print("Unexpected response outcome:", outcome)
     else:
-        print("Error: Invalid response received.")
+        print("API response does not contain 'summary'. Checking for possible issues...")
+        if "error" in response and response["error"]:
+            print(f"API Error: {response['error']}")
+        elif "status_code" in response:
+            print(f"API Status Code: {response['status_code']}")
+            if response["status_code"] != 200:
+                print("API returned a non-successful status. Please check credentials or request format.")
+        else:
+            print("Unknown API response structure. Please review the full response above.")
 
 # Main function
 def main():
