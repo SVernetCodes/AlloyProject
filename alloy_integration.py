@@ -118,7 +118,7 @@ def submit_application(applicant_data):
         return None
 
 # Function to process API response
-def process_response(response):She
+def process_response(response):
     """Processes API response and prints an appropriate message."""
     if not response:
         print("Error: No response received.")
