@@ -1,10 +1,20 @@
+import os
 import requests
 import re
+import getpass # Used to mask SSN input
+from dotenv import load_dotenv
 
-# Placeholder for API credentials
-WORKFLOW_TOKEN = "your_workflow_token"
-WORKFLOW_SECRET = "your_workflow_secret"
+# Load environment variables from .env file
+load_dotenv()
+
+# Get API credentials securely
+WORKFLOW_TOKEN = os.getenv( "WORKFLOW_TOKEN" )
+WORKFLOW_SECRET = os.getenv( "WORKFLOW_SECRET" )
 EVALUATIONS_ENDPOINT = "https://sandbox.alloy.co/v1/evaluations/"
+
+# Ensure API credentials are loaded
+if not WORKFLOW_TOKEN or not WORKFLOW_SECRET:
+    raise ValueError( "API credentials are missing. Please check your .env file." )
 
 # List of valid U.S. state abbreviations
 VALID_STATES = [
@@ -15,11 +25,12 @@ VALID_STATES = [
 
 # Validation functions
 def get_valid_name(prompt):
+    """ Ensures name contains only alphabetical characters and is at least 2 characters"""
     while True:
         name = input(prompt).strip()
-        if len(name) >= 2:
+        if name.isalpha() and len(name) >= 2:
             return name
-        print("Error: Name must be at least 2 characters long.")
+        print("Error: Name must contain only letters and be at least 2 characters long.")
 
 def get_valid_state():
     while True:
